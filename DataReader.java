@@ -1,20 +1,23 @@
+import java.io.FileInputStream;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.Reader;
 import java.util.Scanner;
 
-public class Reader {
-    private FileReader fr;
+public class DataReader {
+    //private FileReader fr;
     private Scanner scanner;
 
-    public Reader(String path){
-        try{
-            fr = new FileReader(path);
-            scanner = new Scanner(fr);
+    public DataReader(FileInputStream inputStream){
+        scanner = new Scanner(inputStream);
+        /*try{
+            //fr = new FileReader(path);
+
         }
         catch (IOException ex){
             System.err.println(ex.getMessage());
             System.exit(1);
-        }
+        }*/
     }
 
     public boolean hasNextLine(){
@@ -26,12 +29,13 @@ public class Reader {
     }
 
     public void close(){
-        try {
+        scanner.close();
+        /*try {
             fr.close();
             scanner.close();
         }
         catch (IOException ex){
             System.err.println(ex.getMessage());
-        }
+        }*/
     }
 }

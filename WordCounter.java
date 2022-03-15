@@ -1,3 +1,4 @@
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
@@ -13,13 +14,20 @@ public class WordCounter {
     }
 
     public void count(String path){
-        Reader reader = new Reader(path);
+        DataReader dataReader = null;
+        try {
+            dataReader = new DataReader(new FileInputStream(path));
+        }
+        catch (IOException e) {
+            System.err.println(e.getLocalizedMessage());
+            //e.printStackTrace();
+        }
         String str;
-        while (reader.hasNextLine()){
-            str = reader.getNextLine();
+        while (dataReader.hasNextLine()){
+            str = dataReader.getNextLine();
             parseLine(str);
         }
-        reader.close();
+        dataReader.close();
     }
 
     public void outputResult(String path){
@@ -27,7 +35,7 @@ public class WordCounter {
         map.entrySet().stream().sorted(Map.Entry.<String, Integer>comparingByValue().reversed())
                 .forEach(e -> {
                     try {
-                        writer.println(e.getKey() + ", " + e.getValue() + ", " + (double) e.getValue() / wordsAmount * 100);
+                        writer.println(e.getKey() + ", " + e.getValue() + ", " + (double) e.getValue() / wordsAmount * 100 + "%");
                     } catch (IOException ex) {
                         ex.printStackTrace();
                     }
@@ -43,7 +51,7 @@ public class WordCounter {
             if (Character.isLetterOrDigit(symbol)){
                 word.append(symbol);
             }
-            else{
+            else if (!word.isEmpty()) {
                 countWord(word.toString());
                 word = new StringBuilder();
             }
