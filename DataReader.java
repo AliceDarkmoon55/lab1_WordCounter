@@ -1,41 +1,52 @@
-import java.io.FileInputStream;
-import java.io.FileReader;
-import java.io.IOException;
-import java.io.Reader;
+import java.io.InputStream;
 import java.util.Scanner;
 
 public class DataReader {
-    //private FileReader fr;
     private Scanner scanner;
+    private String line;
+    private int limiter;
 
-    public DataReader(FileInputStream inputStream){
+    public DataReader(InputStream inputStream){
         scanner = new Scanner(inputStream);
-        /*try{
-            //fr = new FileReader(path);
+        line = "";
+        limiter = 0;
+    }
 
+    public boolean isExists() {
+        return scanner.hasNextLine() || limiter < line.length();
+    }
+
+    public void getNextLine(){
+        line = scanner.nextLine();
+        limiter = 0;
+    }
+
+    public String getWord() {
+        if (line.isEmpty() || limiter == line.length()) {
+            getNextLine();
         }
-        catch (IOException ex){
-            System.err.println(ex.getMessage());
-            System.exit(1);
-        }*/
-    }
-
-    public boolean hasNextLine(){
-        return scanner.hasNextLine();
-    }
-
-    public String getNextLine(){
-        return scanner.nextLine();
+        String word = "";
+        while (line.length() > limiter) {
+            if (word.isEmpty() && !Character.isLetterOrDigit(line.charAt(limiter))) {
+                limiter++;
+                continue;
+            }
+            else if (Character.isLetterOrDigit(line.charAt(limiter))) {
+                word += line.charAt(limiter);
+                limiter++;
+            }
+            else if (!word.isEmpty() && !Character.isLetterOrDigit(line.charAt(limiter))) {
+                limiter++;
+                break;
+            }
+            if (word.isEmpty() && (limiter == line.length())) {
+                getNextLine();
+            }
+        }
+        return word;
     }
 
     public void close(){
         scanner.close();
-        /*try {
-            fr.close();
-            scanner.close();
-        }
-        catch (IOException ex){
-            System.err.println(ex.getMessage());
-        }*/
     }
 }

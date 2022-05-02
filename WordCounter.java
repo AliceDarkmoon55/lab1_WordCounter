@@ -1,71 +1,75 @@
-import java.io.FileInputStream;
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.util.Comparator;
 
 
 public class WordCounter {
-    private HashMap<String, Integer> map;
+    private TableKeyValue<String, Integer> statistics;
     private int wordsAmount;
 
     public WordCounter(){
-        map = new HashMap<>();
+        statistics = new TableKeyValue<>(addComp);
         wordsAmount = 0;
     }
 
-    public void count(String path){
+    private Comparator<PairKeyValue<String, Integer>> addComp = new Comparator<PairKeyValue<String, Integer>>() {
+        @Override
+        public int compare (PairKeyValue<String, Integer> first, PairKeyValue<String, Integer> second) {
+            return first.getKey().compareTo(second.getKey());
+        }
+    };
+
+    private Comparator<PairKeyValue<String, Integer>> sortComp = new Comparator<PairKeyValue<String, Integer>>() {
+        @Override
+        public int compare (PairKeyValue<String, Integer> first, PairKeyValue<String, Integer> second) {
+            int res = second.getValue() - first.getValue();
+            if (res != 0) {
+                return res;
+            }
+            else {
+                return first.getKey().compareTo(second.getKey());
+            }
+        }
+    };
+
+    public void count(InputStream inputStream){
         DataReader dataReader = null;
         try {
-            dataReader = new DataReader(new FileInputStream(path));
-        }
-        catch (IOException e) {
-            System.err.println(e.getLocalizedMessage());
-            //e.printStackTrace();
-        }
-        String str;
-        while (dataReader.hasNextLine()){
-            str = dataReader.getNextLine();
-            parseLine(str);
-        }
-        dataReader.close();
-    }
-
-    public void outputResult(String path){
-        Writer writer = new Writer(path);
-        map.entrySet().stream().sorted(Map.Entry.<String, Integer>comparingByValue().reversed())
-                .forEach(e -> {
-                    try {
-                        writer.println(e.getKey() + ", " + e.getValue() + ", " + (double) e.getValue() / wordsAmount * 100 + "%");
-                    } catch (IOException ex) {
-                        ex.printStackTrace();
+            dataReader = new DataReader(inputStream);
+            while (dataReader.isExists()) {
+                String word = dataReader.getWord();
+                if (!word.isEmpty()) {
+                    if (!statistics.add(word, 1)) {
+                        int value = statistics.getElement(word, 1).getValue();
+                        statistics.getElement(word, 1).setValue(value + 1);
                     }
-                });
-        writer.close();
-    }
-
-    private void parseLine(String str){
-        StringBuilder word = new StringBuilder();
-        int strSize = str.length();
-        for (int i = 0; i < strSize; ++i){
-            char symbol = str.charAt(i);
-            if (Character.isLetterOrDigit(symbol)){
-                word.append(symbol);
-            }
-            else if (!word.isEmpty()) {
-                countWord(word.toString());
-                word = new StringBuilder();
+                    wordsAmount++;
+                }
             }
         }
-        if (!word.toString().isEmpty()){
-            countWord(word.toString());
+        finally {
+                if (dataReader != null) {
+                    dataReader.close();
+                }
         }
     }
 
-    private void countWord(String word){
-        if (!map.containsKey(word)){
-            map.put(word, 0);
+    public void outputResult(OutputStream outputStream, char delimiter) {
+        DataWriter dataWriter = null;
+        try {
+            PairKeyValue<String, Integer>[] toPrint = statistics.getSortedData(sortComp);
+            dataWriter = new DataWriter(outputStream, delimiter, wordsAmount);
+            for (int i = 0; i < toPrint.length; i++) {
+                dataWriter.writeLine(toPrint[i].getKey(), toPrint[i].getValue());
+            }
+            dataWriter.writeTotalWords();
+        } catch (IOException ex) {
+            System.err.println(ex.getLocalizedMessage());
+        } finally {
+            if (dataWriter != null) {
+                dataWriter.close();
+            }
         }
-        map.put(word, map.get(word) + 1);
-        wordsAmount++;
     }
 }
